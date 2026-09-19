@@ -24,7 +24,7 @@ import { beginMove, canMove, cellDistance, directionTowards, newMover, updateMov
 import { horrorSound } from '../lib/horrorGame/soundEngine';
 import { HorrorRoom, PLAYER_COLORS, randomPlayerId, type RemotePlayerInfo } from '../lib/horrorGame/multiplayer';
 import { supabaseConfigured } from '../lib/supabase';
-import type { Dir, GamePhase, GameMode, Grid, Point } from '../lib/horrorGame/types';
+import type { Dir, GamePhase, GameMode, Grid, MonsterKind, Point } from '../lib/horrorGame/types';
 
 const MAZE_W = 13;
 const MAZE_H = 13;
@@ -116,18 +116,159 @@ function drawPerson(ctx: CanvasRenderingContext2D, x: number, y: number, color: 
   }
 }
 
-function drawMonster(ctx: CanvasRenderingContext2D, x: number, y: number, t: number) {
-  const wobble = Math.sin(t / 90) * 2;
-  drawGlowCircle(ctx, x, y, 46, 'rgba(139,0,0,0.35)');
-  ctx.fillStyle = '#150404';
+function drawLaLlorona(ctx: CanvasRenderingContext2D, x: number, y: number, t: number) {
+  const floatY = Math.sin(t / 320) * 4;
+  const sway = Math.sin(t / 500) * 3;
+  const cy = y + floatY;
+
+  drawGlowCircle(ctx, x, cy - 6, 52, 'rgba(180,220,255,0.32)');
+
+  // dress — wide ragged bell shape
+  ctx.fillStyle = 'rgba(225,228,238,0.8)';
   ctx.beginPath();
-  ctx.ellipse(x, y + 4 + wobble, 15, 19, 0, 0, Math.PI * 2);
+  ctx.moveTo(x - 7 + sway * 0.3, cy - 14);
+  ctx.quadraticCurveTo(x - 26 + sway, cy + 14, x - 20 + sway, cy + 30);
+  const hemTeeth = 6;
+  for (let i = 0; i <= hemTeeth; i++) {
+    const hx = x - 20 + sway + (i * 40) / hemTeeth;
+    const hy = cy + 30 + (i % 2 === 0 ? 6 : -3);
+    ctx.lineTo(hx, hy);
+  }
+  ctx.quadraticCurveTo(x + 26 + sway, cy + 14, x + 7 + sway * 0.3, cy - 14);
+  ctx.closePath();
   ctx.fill();
-  ctx.fillStyle = '#ff1a1a';
+
+  // pale face
+  ctx.fillStyle = 'rgba(235,235,230,0.9)';
   ctx.beginPath();
-  ctx.arc(x - 5, y - 3 + wobble, 2.6, 0, Math.PI * 2);
-  ctx.arc(x + 5, y - 3 + wobble, 2.6, 0, Math.PI * 2);
+  ctx.ellipse(x, cy - 20, 8, 9, 0, 0, Math.PI * 2);
   ctx.fill();
+
+  // long black hair draping over the face and shoulders
+  ctx.fillStyle = 'rgba(8,8,14,0.92)';
+  ctx.beginPath();
+  ctx.moveTo(x - 11, cy - 26);
+  ctx.quadraticCurveTo(x - 15, cy - 8, x - 12 + sway * 0.5, cy + 14);
+  ctx.quadraticCurveTo(x - 4, cy - 2, x, cy - 12);
+  ctx.quadraticCurveTo(x + 4, cy - 2, x + 12 + sway * 0.5, cy + 14);
+  ctx.quadraticCurveTo(x + 15, cy - 8, x + 11, cy - 26);
+  ctx.quadraticCurveTo(x, cy - 32, x - 11, cy - 26);
+  ctx.closePath();
+  ctx.fill();
+
+  // glowing eyes peeking through the hair
+  drawGlowCircle(ctx, x - 4, cy - 19, 5, 'rgba(200,240,255,0.9)');
+  drawGlowCircle(ctx, x + 4, cy - 19, 5, 'rgba(200,240,255,0.9)');
+  ctx.fillStyle = '#eafcff';
+  ctx.beginPath();
+  ctx.arc(x - 4, cy - 19, 1.4, 0, Math.PI * 2);
+  ctx.arc(x + 4, cy - 19, 1.4, 0, Math.PI * 2);
+  ctx.fill();
+
+  // thin ghostly arms reaching down
+  ctx.strokeStyle = 'rgba(225,228,238,0.65)';
+  ctx.lineWidth = 2.5;
+  ctx.beginPath();
+  ctx.moveTo(x - 9, cy - 10);
+  ctx.quadraticCurveTo(x - 18 + sway, cy + 4, x - 14 + sway, cy + 20);
+  ctx.moveTo(x + 9, cy - 10);
+  ctx.quadraticCurveTo(x + 18 + sway, cy + 4, x + 14 + sway, cy + 20);
+  ctx.stroke();
+}
+
+function drawJineteSinCabeza(ctx: CanvasRenderingContext2D, x: number, y: number, t: number) {
+  const gallop = Math.abs(Math.sin(t / 110)) * 5;
+  const cy = y - gallop;
+  const legPhase = t / 110;
+
+  drawGlowCircle(ctx, x, cy, 56, 'rgba(255,120,30,0.28)');
+
+  // legs (galloping stride)
+  ctx.strokeStyle = '#0c0a08';
+  ctx.lineWidth = 3;
+  for (let i = 0; i < 4; i++) {
+    const baseX = x - 16 + i * 11;
+    const swing = Math.sin(legPhase + i * 1.4) * 7;
+    ctx.beginPath();
+    ctx.moveTo(baseX, cy + 8);
+    ctx.lineTo(baseX + swing, cy + 22);
+    ctx.stroke();
+  }
+
+  // horse body
+  ctx.fillStyle = '#150f0c';
+  ctx.beginPath();
+  ctx.ellipse(x - 2, cy + 4, 24, 12, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  // neck + chest
+  ctx.beginPath();
+  ctx.moveTo(x + 16, cy + 4);
+  ctx.quadraticCurveTo(x + 28, cy - 8, x + 22, cy - 18);
+  ctx.quadraticCurveTo(x + 16, cy - 6, x + 14, cy + 4);
+  ctx.closePath();
+  ctx.fill();
+
+  // mane + tail
+  ctx.fillStyle = 'rgba(20,16,14,0.9)';
+  ctx.beginPath();
+  ctx.moveTo(x - 24, cy - 2);
+  ctx.quadraticCurveTo(x - 34, cy + 2, x - 28, cy + 10);
+  ctx.quadraticCurveTo(x - 20, cy + 4, x - 18, cy - 2);
+  ctx.closePath();
+  ctx.fill();
+
+  // rider cloak
+  ctx.fillStyle = '#0a0a12';
+  ctx.beginPath();
+  ctx.moveTo(x - 2, cy - 6);
+  ctx.lineTo(x + 6, cy - 26);
+  ctx.quadraticCurveTo(x + 2, cy - 30, x - 8, cy - 26);
+  ctx.quadraticCurveTo(x - 16, cy - 18, x - 10, cy - 4);
+  ctx.closePath();
+  ctx.fill();
+  // flowing cape tail
+  ctx.beginPath();
+  ctx.moveTo(x - 8, cy - 24);
+  ctx.quadraticCurveTo(x - 20 - gallop, cy - 20, x - 22 - gallop, cy - 8);
+  ctx.quadraticCurveTo(x - 14, cy - 14, x - 8, cy - 16);
+  ctx.closePath();
+  ctx.fill();
+
+  // pumpkin head held aloft
+  const px = x + 10;
+  const py = cy - 30 + Math.sin(t / 200) * 2;
+  drawGlowCircle(ctx, px, py, 20, 'rgba(255,150,20,0.55)');
+  ctx.fillStyle = '#d9660b';
+  ctx.beginPath();
+  ctx.arc(px, py, 8, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = '#3a1a00';
+  ctx.beginPath();
+  ctx.moveTo(px - 4, py - 2);
+  ctx.lineTo(px - 1, py - 4);
+  ctx.lineTo(px - 1, py);
+  ctx.closePath();
+  ctx.fill();
+  ctx.beginPath();
+  ctx.moveTo(px + 4, py - 2);
+  ctx.lineTo(px + 1, py - 4);
+  ctx.lineTo(px + 1, py);
+  ctx.closePath();
+  ctx.fill();
+  ctx.beginPath();
+  ctx.moveTo(px - 4, py + 4);
+  ctx.lineTo(px + 4, py + 4);
+  ctx.lineTo(px + 2, py + 6);
+  ctx.lineTo(px, py + 4);
+  ctx.lineTo(px - 2, py + 6);
+  ctx.closePath();
+  ctx.fill();
+}
+
+function drawMonster(ctx: CanvasRenderingContext2D, x: number, y: number, t: number, kind: MonsterKind) {
+  if (kind === 'llorona') drawLaLlorona(ctx, x, y, t);
+  else drawJineteSinCabeza(ctx, x, y, t);
 }
 
 function drawKey(ctx: CanvasRenderingContext2D, x: number, y: number, t: number) {
@@ -265,6 +406,8 @@ export function HorrorGamePage() {
   const collectedRef = useRef<Set<number>>(new Set());
   const localMoverRef = useRef<Mover>(newMover(0, 0, CELL));
   const monsterMoverRef = useRef<Mover>(newMover(0, 0, CELL));
+  const monsterKindRef = useRef<MonsterKind>('llorona');
+  const nameRevealedRef = useRef(false);
   const remoteMoversRef = useRef<Map<string, RemoteMover>>(new Map());
   const keysHeldRef = useRef<string[]>([]);
   const touchDirRef = useRef<Dir | null>(null);
@@ -308,7 +451,11 @@ export function HorrorGamePage() {
     const pan = Math.max(-1, Math.min(1, (mover.px - local.px) / 260));
     const dist = Math.hypot(mover.px - local.px, mover.py - local.py) / CELL;
     const volume = Math.max(0.04, Math.min(ownVolumeBase, 1 - dist / 7));
-    horrorSound.playFootstep(pan, volume);
+    if (monsterKindRef.current === 'jinete') {
+      horrorSound.playHoofbeat(pan, volume);
+    } else {
+      horrorSound.playSob(pan, volume);
+    }
   }, []);
 
   const triggerJumpscare = useCallback((intensity: 'small' | 'big') => {
@@ -324,6 +471,7 @@ export function HorrorGamePage() {
     const spots = pickFarPoints(grid, start, KEY_COUNT, Math.floor((MAZE_W + MAZE_H) / 2));
     const keys: KeyItem[] = spots.map((p, i) => ({ id: i, x: p.x, y: p.y }));
     const monsterStart = findFarthest(grid, exit);
+    const monsterKind: MonsterKind = rng() < 0.5 ? 'llorona' : 'jinete';
 
     gridRef.current = grid;
     exitRef.current = exit;
@@ -332,6 +480,8 @@ export function HorrorGamePage() {
     totalKeysRef.current = keys.length;
     localMoverRef.current = newMover(start.x, start.y, CELL, 'S');
     monsterMoverRef.current = newMover(monsterStart.x, monsterStart.y, CELL, 'N');
+    monsterKindRef.current = monsterKind;
+    nameRevealedRef.current = false;
     remoteMoversRef.current.clear();
     sanityRef.current = MAX_SANITY;
     setSanityDisplay(MAX_SANITY);
@@ -480,13 +630,24 @@ export function HorrorGamePage() {
           horrorSound.playGameOverDrone();
         }
 
+        if (proximity > 0.45 && !nameRevealedRef.current) {
+          nameRevealedRef.current = true;
+          toast(
+            monsterKindRef.current === 'llorona'
+              ? 'Escuchas un llanto lejano... es La Llorona.'
+              : 'Sientes cascos de caballo acercándose... es El Jinete Sin Cabeza.',
+            'info',
+          );
+        }
+
         if (t >= nextAmbientAtRef.current) {
           nextAmbientAtRef.current = t + 13000 + Math.random() * 14000;
           triggerJumpscare('small');
         }
         if (t >= nextWhisperAtRef.current) {
           nextWhisperAtRef.current = t + 6000 + Math.random() * 9000;
-          horrorSound.playWhisper();
+          if (monsterKindRef.current === 'llorona') horrorSound.playLloronaWail();
+          else horrorSound.playDistantHoofbeats();
         }
 
         flickerRef.current = 0.9 + Math.sin(t / 220) * 0.06 + (Math.random() - 0.5) * 0.05;
@@ -515,7 +676,7 @@ export function HorrorGamePage() {
         for (const rm of remoteMoversRef.current.values()) {
           drawPerson(ctx, rm.px - camX, rm.py - camY, rm.color, rm.name);
         }
-        drawMonster(ctx, monsterMover.px - camX, monsterMover.py - camY, t);
+        drawMonster(ctx, monsterMover.px - camX, monsterMover.py - camY, t, monsterKindRef.current);
         drawPerson(ctx, localMover.px - camX, localMover.py - camY, selfInfoRef.current?.color || '#38bdf8');
 
         const sanityRatio = sanityRef.current / MAX_SANITY;
@@ -538,7 +699,7 @@ export function HorrorGamePage() {
 
       rafRef.current = requestAnimationFrame(gameLoop);
     },
-    [collectKey, handleLocalCatch, handleWin, playFootstepFor, triggerJumpscare],
+    [collectKey, handleLocalCatch, handleWin, playFootstepFor, toast, triggerJumpscare],
   );
 
   const startGameLoop = useCallback(() => {
@@ -781,6 +942,7 @@ export function HorrorGamePage() {
       <JumpscareOverlay
         active={jumpscare.active}
         intensity={jumpscare.intensity}
+        kind={monsterKindRef.current}
         onDone={() => setJumpscare((j) => ({ ...j, active: false }))}
       />
 
@@ -790,8 +952,10 @@ export function HorrorGamePage() {
           <div>
             <h1 className="text-3xl font-extrabold tracking-wide text-red-500">La Casa Sin Luz</h1>
             <p className="mt-2 text-sm text-slate-400">
-              Explora un caserón a oscuras, recoge las llaves y escapa antes de que tu cordura se apague. Juega solo o
-              en equipo: cada susto tiene su propio sonido.
+              Explora un caserón a oscuras, recoge las llaves y escapa antes de que tu cordura se apague. En cada
+              partida te persigue <span className="text-slate-200">La Llorona</span> o{' '}
+              <span className="text-slate-200">El Jinete Sin Cabeza</span>. Juega solo o en equipo: cada susto tiene
+              su propio sonido.
             </p>
           </div>
           <input

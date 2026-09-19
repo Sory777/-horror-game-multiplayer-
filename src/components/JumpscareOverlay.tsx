@@ -1,12 +1,57 @@
 import { useEffect, useState } from 'react';
+import type { MonsterKind } from '../lib/horrorGame/types';
 
 interface JumpscareOverlayProps {
   active: boolean;
   intensity: 'small' | 'big';
+  kind: MonsterKind;
   onDone: () => void;
 }
 
-export function JumpscareOverlay({ active, intensity, onDone }: JumpscareOverlayProps) {
+function LloronaFace({ big }: { big: boolean }) {
+  return (
+    <>
+      <ellipse cx="100" cy="105" rx="62" ry="88" fill="#e7e9ef" />
+      <path
+        d="M 40 60 Q 35 20 100 12 Q 165 20 160 60 Q 172 110 150 150 Q 140 100 130 70 Q 115 90 100 70 Q 85 90 70 70 Q 60 100 50 150 Q 28 110 40 60 Z"
+        fill="#0a0a12"
+      />
+      <ellipse cx="70" cy="100" rx="13" ry={big ? 20 : 11} fill="#eafcff">
+        <animate attributeName="ry" values={big ? '20;25;20' : '11;13;11'} dur="0.35s" repeatCount="indefinite" />
+      </ellipse>
+      <ellipse cx="130" cy="100" rx="13" ry={big ? 20 : 11} fill="#eafcff">
+        <animate attributeName="ry" values={big ? '20;25;20' : '11;13;11'} dur="0.35s" repeatCount="indefinite" />
+      </ellipse>
+      <circle cx="70" cy="100" r="4" fill="#0a0a12" />
+      <circle cx="130" cy="100" r="4" fill="#0a0a12" />
+      <path
+        d="M 62 150 Q 100 200 138 150 Q 100 190 62 150 Z"
+        fill="#1a0a10"
+      />
+    </>
+  );
+}
+
+function JineteFace({ big }: { big: boolean }) {
+  return (
+    <>
+      <ellipse cx="100" cy="105" rx="72" ry="80" fill="#d9660b" stroke="#3a1a00" strokeWidth="4" />
+      <path d="M 55 60 L 90 95 L 55 100 Z" fill="#3a1a00">
+        <animate attributeName="opacity" values={big ? '1;0.7;1' : '1;0.9;1'} dur="0.3s" repeatCount="indefinite" />
+      </path>
+      <path d="M 145 60 L 110 95 L 145 100 Z" fill="#3a1a00">
+        <animate attributeName="opacity" values={big ? '1;0.7;1' : '1;0.9;1'} dur="0.3s" repeatCount="indefinite" />
+      </path>
+      <path
+        d="M 55 145 L 75 130 L 90 145 L 100 128 L 110 145 L 125 130 L 145 145 L 135 165 L 115 152 L 100 168 L 85 152 L 65 165 Z"
+        fill="#3a1a00"
+      />
+      <path d="M 90 8 Q 100 -4 110 8 L 106 20 L 94 20 Z" fill="#2f6b1f" />
+    </>
+  );
+}
+
+export function JumpscareOverlay({ active, intensity, kind, onDone }: JumpscareOverlayProps) {
   const [visible, setVisible] = useState(false);
 
   useEffect(() => {
@@ -23,6 +68,7 @@ export function JumpscareOverlay({ active, intensity, onDone }: JumpscareOverlay
   if (!visible) return null;
 
   const big = intensity === 'big';
+  const glow = kind === 'llorona' ? 'rgba(150,220,255,0.5)' : 'rgba(255,140,0,0.5)';
 
   return (
     <div
@@ -32,30 +78,9 @@ export function JumpscareOverlay({ active, intensity, onDone }: JumpscareOverlay
       <svg
         viewBox="0 0 200 200"
         className={big ? 'h-[70vh] w-[70vh] max-w-full' : 'h-[35vh] w-[35vh] max-w-full opacity-70'}
-        style={{ filter: 'drop-shadow(0 0 40px rgba(255,0,0,0.5))' }}
+        style={{ filter: `drop-shadow(0 0 40px ${glow})` }}
       >
-        <ellipse cx="100" cy="105" rx="70" ry="85" fill="#0a0a0a" stroke="#3a0000" strokeWidth="3" />
-        <ellipse cx="70" cy="90" rx="16" ry={big ? 22 : 12} fill="#ff1a1a">
-          <animate attributeName="ry" values={big ? '22;28;22' : '12;14;12'} dur="0.3s" repeatCount="indefinite" />
-        </ellipse>
-        <ellipse cx="130" cy="90" rx="16" ry={big ? 22 : 12} fill="#ff1a1a">
-          <animate attributeName="ry" values={big ? '22;28;22' : '12;14;12'} dur="0.3s" repeatCount="indefinite" />
-        </ellipse>
-        <circle cx="70" cy="90" r="6" fill="#000" />
-        <circle cx="130" cy="90" r="6" fill="#000" />
-        <path
-          d="M 55 145 Q 100 190 145 145 L 138 150 Q 100 175 62 150 Z"
-          fill="#450a0a"
-          stroke="#8b0000"
-          strokeWidth="2"
-        />
-        {Array.from({ length: 7 }).map((_, i) => (
-          <polygon
-            key={i}
-            points={`${60 + i * 12},150 ${64 + i * 12},150 ${62 + i * 12},${big ? 172 : 164}`}
-            fill="#f8fafc"
-          />
-        ))}
+        {kind === 'llorona' ? <LloronaFace big={big} /> : <JineteFace big={big} />}
       </svg>
       <style>{`
         @keyframes jumpscare-shake {

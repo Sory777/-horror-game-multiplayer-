@@ -28,6 +28,7 @@ export interface PlayerState {
 
 export type GamePhase = 'menu' | 'lobby' | 'playing' | 'win' | 'gameover';
 export type GameMode = 'solo' | 'multi';
+export type MonsterKind = 'llorona' | 'jinete';
 
 export interface JumpscareEvent {
   kind: 'ambient' | 'monster' | 'trap' | 'sanity' | 'prank';

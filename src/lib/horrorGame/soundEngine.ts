@@ -167,6 +167,96 @@ export class HorrorSoundEngine {
     src.stop(t + 0.2);
   }
 
+  playHoofbeat(pan: number, volume: number) {
+    const ctx = this.ensureCtx();
+    const t = now(ctx);
+    const panner = ctx.createStereoPanner();
+    panner.pan.value = Math.max(-1, Math.min(1, pan));
+    panner.connect(this.master!);
+
+    [0, 0.09].forEach((offset) => {
+      const start = t + offset;
+      const src = this.noiseSource();
+      const filter = ctx.createBiquadFilter();
+      filter.type = 'bandpass';
+      filter.frequency.value = 550;
+      filter.Q.value = 2.2;
+      const gain = ctx.createGain();
+      gain.gain.setValueAtTime(Math.min(0.55, volume), start);
+      gain.gain.exponentialRampToValueAtTime(0.001, start + 0.07);
+      src.connect(filter);
+      filter.connect(gain);
+      gain.connect(panner);
+      src.start(start);
+      src.stop(start + 0.08);
+    });
+  }
+
+  playSob(pan: number, volume: number) {
+    const ctx = this.ensureCtx();
+    const t = now(ctx);
+    const panner = ctx.createStereoPanner();
+    panner.pan.value = Math.max(-1, Math.min(1, pan));
+    panner.connect(this.master!);
+
+    const osc = ctx.createOscillator();
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(320, t);
+    osc.frequency.linearRampToValueAtTime(260, t + 0.35);
+    const gain = ctx.createGain();
+    gain.gain.setValueAtTime(0, t);
+    gain.gain.linearRampToValueAtTime(Math.min(0.14, volume), t + 0.08);
+    gain.gain.linearRampToValueAtTime(0, t + 0.4);
+    osc.connect(gain);
+    gain.connect(panner);
+    osc.start(t);
+    osc.stop(t + 0.42);
+  }
+
+  playLloronaWail() {
+    const ctx = this.ensureCtx();
+    const t = now(ctx);
+    const duration = 2.2;
+
+    const osc = ctx.createOscillator();
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(420, t);
+    osc.frequency.linearRampToValueAtTime(620, t + duration * 0.35);
+    osc.frequency.linearRampToValueAtTime(340, t + duration);
+
+    const vibrato = ctx.createOscillator();
+    vibrato.frequency.value = 5.5;
+    const vibratoGain = ctx.createGain();
+    vibratoGain.gain.value = 18;
+    vibrato.connect(vibratoGain);
+    vibratoGain.connect(osc.frequency);
+
+    const gain = ctx.createGain();
+    gain.gain.setValueAtTime(0, t);
+    gain.gain.linearRampToValueAtTime(0.16, t + 0.5);
+    gain.gain.linearRampToValueAtTime(0.1, t + duration * 0.6);
+    gain.gain.linearRampToValueAtTime(0, t + duration);
+
+    const pan = ctx.createStereoPanner();
+    pan.pan.value = Math.random() * 1.4 - 0.7;
+
+    osc.connect(gain);
+    gain.connect(pan);
+    pan.connect(this.master!);
+    osc.start(t);
+    vibrato.start(t);
+    osc.stop(t + duration + 0.1);
+    vibrato.stop(t + duration + 0.1);
+  }
+
+  playDistantHoofbeats() {
+    const volume = 0.1 + Math.random() * 0.08;
+    const pan = Math.random() * 1.6 - 0.8;
+    for (let i = 0; i < 4; i++) {
+      window.setTimeout(() => this.playHoofbeat(pan, volume), i * 180);
+    }
+  }
+
   startHeartbeat(getBpmAndVolume: () => { bpm: number; volume: number }) {
     this.stopHeartbeat();
     const beat = () => {
